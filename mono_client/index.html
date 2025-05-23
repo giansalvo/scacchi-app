@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Monitor Messaggi TCP</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        #status {
+            padding: 10px;
+            margin-bottom: 10px;
+            background: #f0f0f0;
+            border-radius: 4px;
+        }
+        #messages {
+            border: 1px solid #ddd;
+            padding: 15px;
+            height: 300px;
+            overflow-y: auto;
+            background: #f9f9f9;
+        }
+        .message {
+            margin-bottom: 10px;
+            padding: 8px;
+            border-left: 3px solid #4CAF50;
+            background: white;
+        }
+        .timestamp {
+            color: #666;
+            font-size: 0.8em;
+        }
+        .source {
+            font-style: italic;
+            color: #333;
+        }
+        button {
+            padding: 5px 10px;
+            margin-left: 10px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Monitor Messaggi TCP</h1>
+    <div id="status">Stato: Disconnesso</div>
+    <div id="messages"></div>
+
+    <script>
+        const statusEl = document.getElementById('status');
+        const messagesEl = document.getElementById('messages');
+        let eventSource;
+        let reconnectTimer;
+        const reconnectDelay = 3000; // 3 secondi
+
+        function displayMessage(data) {
+            const messageEl = document.createElement('div');
+            messageEl.className = 'message';
+            messageEl.innerHTML = `
+                <div class="timestamp">${new Date(data.timestamp).toLocaleString()}</div>
+                <div class="content">${data.message}</div>
+                <div class="source">Da: ${data.source}</div>
+            `;
+            messagesEl.prepend(messageEl);
+
+            // Auto-scroll
+            messagesEl.scrollTop = 0;
+        }
+
+        function connectSSE() {
+            // Chiudi connessione esistente
+            if (eventSource) {
+                eventSource.close();
+                clearTimeout(reconnectTimer);
+            }
+
+            statusEl.textContent = "Stato: Connessione in corso...";
+
+            eventSource = new EventSource('http://localhost:8080/stream');
+
+            eventSource.onopen = () => {
+                statusEl.textContent = "Stato: Connesso";
+            };
+
+            eventSource.onmessage = (e) => {
+                try {
+                    const data = JSON.parse(e.data);
+                    displayMessage(data);
+                } catch (err) {
+                    console.error("Errore parsing messaggio:", err);
+                }
+            };
+
+            eventSource.onerror = () => {
+                statusEl.textContent = "Stato: Disconnesso - Tentativo di riconnessione...";
+                eventSource.close();
+                reconnectTimer = setTimeout(connectSSE, reconnectDelay);
+            };
+        }
+
+        // Bottone per riconnessione manuale
+        const reconnectBtn = document.createElement('button');
+        reconnectBtn.textContent = "Connetti";
+        reconnectBtn.onclick = () => {
+            connectSSE();
+        };
+        statusEl.appendChild(reconnectBtn);
+
+        // Avvia la connessione iniziale
+        connectSSE();
+    </script>
+</body>
+</html>
