@@ -2,3 +2,7 @@ fastapi
 uvicorn[standard]
 mysql-connector-python
 requests
+python-dotenv
+sqlalchemy
+pymysql
+websockets

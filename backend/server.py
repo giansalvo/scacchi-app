@@ -10,7 +10,6 @@ import mysql.connector
 import uvicorn
 import json
 import os
-from dotenv import load_dotenv
 from fastapi.middleware.cors import CORSMiddleware
 from pathlib import Path
 import datetime
@@ -18,10 +17,6 @@ import asyncio
 
 # Ottieni il percorso assoluto della directory del progetto
 BASE_DIR = Path(__file__).parent.parent
-
-
-load_dotenv()
-SERVER_PORT = int(os.getenv("SERVER_PORT", 50000))
 
 app = FastAPI()
 app.mount("/static", StaticFiles(directory="./frontend"), name="static")
@@ -38,14 +33,35 @@ app.add_middleware(
 connections_lock = asyncio.Lock()
 active_connections = []
 
+# Configurazione da variabili d'ambiente
+host = os.getenv("DB_HOST")
+user = os.getenv("DB_USER")
+password = os.getenv("DB_PASSWORD")
+db_name = os.getenv("DB_NAME")
+db_port = int(os.getenv("DB_PORT"))
+SERVER_PORT = int(os.getenv("SERVER_PORT"))
+
+# Verifica configurazione obbligatoria
+missing_vars = []
+for var in ["DB_HOST", "DB_USER", "DB_PASSWORD", "DB_NAME", "DB_PORT", "SERVER_PORT"]:
+    if not os.getenv(var):
+        missing_vars.append(var)
+
+if missing_vars:
+    raise EnvironmentError(f"Variabili d'ambiente mancanti: {', '.join(missing_vars)}")
+
+print("=== ENVIRONMENT ===")
+for key in ["DB_HOST", "DB_USER", "DB_PASSWORD", "DB_NAME", "DB_PORT", "SERVER_PORT"]:
+    print(f"{key} = {os.getenv(key)}")
+
 
 def get_db():
     return mysql.connector.connect(
-        host=os.getenv("DB_HOST", "localhost"),
-        user=os.getenv("DB_USER", "youruser"),
-        password=os.getenv("DB_PASSWORD", "yourpassword"),
-        database=os.getenv("DB_NAME", "chess"),
-        port=int(os.getenv("DB_PORT", 3306))
+        host=host,
+        user=user,
+        password=password,
+        database=db_name,
+        port=db_port
     )
 
 @app.get("/hello")

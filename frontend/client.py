@@ -6,11 +6,10 @@
 import requests
 import time
 import os
-from dotenv import load_dotenv
 
-load_dotenv()
-PORT = os.getenv("SERVER_PORT", 50000)
-URL = f"http://localhost:{PORT}/api/move"
+SERVER_PORT = os.getenv("SERVER_PORT")
+URL = f"http://localhost:{SERVER_PORT}/api/move"
+print(f"{URL}")
 
 moves = [
     ("e2e4", "rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR b KQkq e3 0 1"),
